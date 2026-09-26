@@ -1,0 +1,85 @@
+name: Build macOS Installer
+
+# Builds the .dmg on a real macOS runner. better-sqlite3 is a native module,
+# so it must be compiled against Electron's ABI on macOS itself.
+# Manual only. This job publishes a GitHub Release containing the installer,
+# so it must never fire automatically on a push — run it from the Actions tab
+# when you actually want a build.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rebuild native modules for Electron
+        run: npx electron-builder install-app-deps
+
+      - name: Every required file is packaged
+        run: npm run check:build-files
+
+      - name: Migration safety test (existing data survives upgrade)
+        run: npm run test:migrations
+
+      - name: Folder path rules test
+        run: npm run test:folders
+
+      - name: Smoke test - launch app, generate documents
+        run: npm run smoke
+
+      - name: Build installer
+        run: npm run dist:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Artifact storage is a per-account quota shared with every other private
+      # repo; when it is full this step fails even though the installer built
+      # fine. The release below is the real download, so do not let this
+      # convenience copy block it.
+      - name: Upload installer
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrueCaption-macOS-Installer
+          path: dist/*.dmg
+          if-no-files-found: error
+
+      # A stable place to download the latest installer from, instead of digging
+      # through Actions runs. Artifacts also expire after 90 days; releases do not.
+      - name: Publish latest installer as a release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest Release
+          body: |
+            Built from `main` (${{ github.sha }}).
+
+            **Windows:** download the `.exe` below and run it.
+
+            **macOS:** download the `.dmg` below, open it, and drag
+            TrueCaption into Applications.
+
+            Each workflow releases to the same `latest` tag, so a file may
+            be missing until that platform's build has also been run.
+
+            The app is not yet code-signed, so your operating system will
+            ask you to confirm on first launch.
+          files: dist/*.dmg
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

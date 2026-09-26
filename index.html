@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TrueCaption</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="print.css" id="print-css" media="print">
+</head>
+<body>
+  <div class="window-layout" id="app-layout">
+    <div class="tabs-container">
+      <div class="tab active" id="nav-home">Home</div>
+      <div class="tab" id="nav-matters">Matters</div>
+      <div class="tab" id="nav-calendar">Calendar</div>
+      <div class="tab" id="nav-people">People</div>
+      <div class="tab" id="nav-contacts">Contacts</div>
+      <div class="tab" id="nav-attorneys">My Office</div>
+      <div class="tab" id="nav-settings">Settings</div>
+      <!-- Help and the zoom controls are drawn as tabs (.tab-tool), so the
+           whole row stands on the same line. Not .tab: that class is the
+           navigation tabs, and code and checks count them. -->
+      <button type="button" id="btn-start-tutorial" class="tab-tool" style="margin-left:8px;" title="Walk through the basics">? Help</button>
+      <div class="zoom-controls" role="group" aria-label="Text size">
+        <button type="button" id="btn-zoom-out" class="tab-tool" title="Zoom out" aria-label="Zoom out"><svg class="zoom-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="6.5" cy="6.5" r="4.75"/><line x1="10" y1="10" x2="14.25" y2="14.25"/><line x1="4.25" y1="6.5" x2="8.75" y2="6.5"/></svg></button>
+        <button type="button" id="zoom-level" class="tab-tool" title="Back to 100%">100%</button>
+        <button type="button" id="btn-zoom-in" class="tab-tool" title="Zoom in" aria-label="Zoom in"><svg class="zoom-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="6.5" cy="6.5" r="4.75"/><line x1="10" y1="10" x2="14.25" y2="14.25"/><line x1="4.25" y1="6.5" x2="8.75" y2="6.5"/><line x1="6.5" y1="4.25" x2="6.5" y2="8.75"/></svg></button>
+      </div>
+      <div class="top-search" style="margin-left:auto; position:relative; padding:2px 8px;">
+        <input type="text" id="global-search" placeholder="Search clients, contacts, matters, case numbers..."
+               autocomplete="off" style="width:280px; padding-right:20px;">
+        <span id="global-search-caret" class="search-caret" title="Search options">&#9662;</span>
+        <div id="global-search-menu" class="hidden search-menu">
+          <label><input type="checkbox" id="global-search-archived"> Show archived</label>
+        </div>
+        <div id="global-search-results" class="hidden"
+             style="position:absolute; right:8px; top:100%; z-index:50; width:340px; max-height:380px;
+                    overflow-y:auto; background:#fff; border:1px solid #999; box-shadow:0 2px 6px rgba(0,0,0,.2);"></div>
+      </div>
+      <!-- Only shown when the row is very narrow (style.css): ends the top row. -->
+      <div class="tab-row-break" aria-hidden="true"></div>
+    </div>
+
+    <!-- Second, quieter tab row. Only People, Contacts and My Office (ids
+         still say "attorneys") have sub-tabs; People and My Office carry a
+         single one, which names what the tab lists.
+         Its height is reserved even when empty so page content doesn't jump
+         switching to a tab with none. -->
+    <div class="sub-tabs-container" id="sub-tabs">
+      <div class="sub-tab-group hidden" id="sub-tabs-people">
+        <span class="sub-tab active" id="sub-people-clients">Clients</span>
+      </div>
+      <div class="sub-tab-group hidden" id="sub-tabs-contacts">
+        <span class="sub-tab active" id="sub-contacts-contacts">Contacts</span>
+        <span class="sub-tab" id="sub-contacts-courts">Courts</span>
+      </div>
+      <div class="sub-tab-group hidden" id="sub-tabs-attorneys">
+        <span class="sub-tab active" id="sub-attorneys-profile">Signing Profiles</span>
+      </div>
+    </div>
+
+    <main class="main-content">
+      <!-- Shown for as long as the documents folder (the output root) is not
+           available on this computer while saved documents point into it
+           (main.js rootRefusal). Not dismissable: every save refuses until
+           it is back, so the reason stays on screen. -->
+      <div id="startup-notice" class="quiet-note hidden" role="status" style="margin:0 0 10px; padding:8px 10px; border:1px solid #c9a227; background:#fff8e1;">
+        <span id="startup-notice-text"></span>
+        <a href="#" id="startup-notice-settings" style="margin-left:8px; color:#003399;">Open Settings</a>
+      </div>
+
+      <!-- HOME VIEW -->
+      <div id="view-home" class="view">
+        <div id="home-setup-note" class="quiet-note hidden"></div>
+        <div style="text-align:right; margin-bottom:4px;">
+          <a href="#" id="home-start-tutorial" style="font-size:0.85em; color:#003399;">New here? Take a quick tour &rarr;</a>
+        </div>
+        <div class="home-panels">
+          <div class="new-matter-panel" id="home-new-matter">
+            <div class="new-matter-panel-title">+ New Matter</div>
+            <div class="new-matter-panel-sub">Start a court filing or a letter</div>
+          </div>
+          <div class="new-matter-panel" id="home-new-client">
+            <div class="new-matter-panel-title">+ New Client</div>
+            <div class="new-matter-panel-sub">A person or an organization</div>
+          </div>
+          <!-- Also a drop target: files dropped here are held on the Add
+               Documents screen until a client is picked. -->
+          <div class="new-matter-panel" id="home-add-documents">
+            <div class="new-matter-panel-title">+ Add Documents</div>
+            <div class="new-matter-panel-sub">File scans under a client or case</div>
+          </div>
+        </div>
+        <div class="home-columns">
+          <div class="home-section">
+            <h3>Upcoming Court Dates <a href="#" id="home-view-calendar" style="font-size:0.7em; font-weight:normal;">View Calendar &rarr;</a></h3>
+            <div id="home-upcoming"></div>
+          </div>
+          <div class="home-section">
+            <h3>Recently Touched Matters</h3>
+            <div id="home-recent"></div>
+          </div>
+          <div class="home-section">
+            <h3>Recently Touched Clients</h3>
+            <div id="home-recent-clients"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CALENDAR VIEW (A9) — read-only. A view over matter_events, not a
+           second place to create court dates. -->
+      <div id="view-calendar" class="view hidden">
+        <div class="toolbar">
+          <button id="btn-back-from-calendar" class="btn hidden">&larr; Back</button>
+          <button id="btn-cal-prev" class="btn" style="margin-left:12px;">&larr; Prev</button>
+          <span id="cal-month-label" style="font-weight:bold; margin:0 10px;"></span>
+          <button id="btn-cal-next" class="btn">Next &rarr;</button>
+          <button id="btn-cal-today" class="btn" style="margin-left:12px;">This Month</button>
+        </div>
+        <div id="cal-grid" class="cal-grid"></div>
+      </div>
+
+      <!-- MATTERS VIEW -->
+      <div id="view-matters" class="view">
+        <div class="new-matter-panel" id="btn-new-matter">
+          <div class="new-matter-panel-title">+ New Matter</div>
+          <div class="new-matter-panel-sub">Start a court filing or a letter</div>
+        </div>
+        <div class="toolbar">
+          <label style="font-weight:normal;">
+            <input type="checkbox" id="matters-show-archived"> Show archived
+          </label>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr><th>Matter Name</th><th style="text-align:right;">Case No.</th><th>Court</th><th>Role</th><th></th></tr>
+          </thead>
+          <tbody id="matters-list"></tbody>
+        </table>
+      </div>
+
+      <!-- PEOPLE VIEW -->
+      <div id="view-people" class="view hidden">
+        <div class="toolbar">
+          <button id="btn-new-person" class="btn primary">New Person</button>
+          <input type="text" id="people-search" placeholder="Search people..." style="margin-left:8px; width:240px;">
+          <label style="margin-left:8px; font-weight:normal;">
+            <input type="checkbox" id="people-show-archived"> Show archived
+          </label>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr><th id="people-sort-name" style="cursor:pointer;" title="Sort by name">Name</th><th>Type</th><th>Firm / Org</th><th id="people-sort-next" style="cursor:pointer;" title="Sort by next court date">Next date</th><th style="text-align:right;">Matters</th></tr>
+          </thead>
+          <tbody id="people-list"></tbody>
+        </table>
+      </div>
+
+      <!-- PERSON DETAIL VIEW -->
+      <div id="view-person-detail" class="view hidden">
+        <div class="toolbar">
+          <button id="btn-back-person" class="btn">&larr; Back</button>
+          <button id="btn-save-person" class="btn primary">Save Person</button>
+          <!-- The paper fallback for a walk-in. Built from INTAKE_FIELDS, the
+               same list the form above is built from. -->
+          <button id="btn-print-questionnaire" class="btn">Print Blank Questionnaire</button>
+          <span id="person-archived-note" style="margin-left:8px; color:#a00;"></span>
+        </div>
+        <input type="hidden" id="per-id">
+        <div id="person-issues" class="hidden" style="margin:0 0 10px; padding:6px 10px; border-left:3px solid #c8c8c8; background:#f6f6f6; color:#555; font-size:0.9em;"></div>
+        <div class="form-grid">
+          <div class="col-main">
+            <!-- The intake questionnaire, grouped. Every input id is
+                 `per-<column>`: renderer.js maps ids to `people` columns by
+                 string concatenation, so a renamed id is a field that silently
+                 stops saving. Collapse is the `data-collapsed` attribute on the
+                 fieldset (CSS hides [data-collapsed] .section-body); the four
+                 occasional sections carry it in the markup so they start
+                 collapsed and the everyday form stays short. -->
+            <fieldset class="fieldset section" id="sec-identity">
+              <legend><button type="button" class="section-toggle">Identity &amp; Contact</button>
+                <span class="section-filled hidden">&#9679;</span></legend>
+              <div class="section-body">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="per-display_name">
+                  </div>
+                  <div class="form-group">
+                    <label>Type</label>
+                    <select id="per-kind">
+                      <option value="individual">Individual</option>
+                      <option value="organization">Organization</option>
+                    </select>
+                  </div>
+                </div>
+                <!-- Organization only (renderer toggles .hidden from per-kind).
+                     Hidden is not blank: the values stay in the inputs and save
+                     with the profile either way. -->
+                <div id="wrap-org-fields" class="hidden">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Name in captions</label>
+                      <input type="text" id="per-caption_name" placeholder="PEOPLE OF THE CITY OF EXAMPLETON">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Signs as</label>
+                      <select id="per-signing_attorney_id"><option value=""></option></select>
+                    </div>
+                    <div class="form-group">
+                      <label>Usually</label>
+                      <select id="per-usual_role">
+                        <option value=""></option>
+                        <option value="plaintiff">Plaintiff</option>
+                        <option value="defendant">Defendant</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style="font-size:0.8em; color:#666; margin:0 0 8px;">Filled in on each new case for this organization. A case can change any of them.</div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Firm / Organization</label>
+                    <input type="text" id="per-firm_name">
+                  </div>
+                  <div class="form-group" id="wrap-per-dob">
+                    <label>Date of Birth</label>
+                    <!-- A real date input, matching packets.client_dob. This was
+                         free text whose "YYYY-MM-DD" was only a placeholder,
+                         which is now a filing hazard: the value is prefilled
+                         into an ISO date field and rendered into documents. -->
+                    <input type="date" id="per-dob">
+                  </div>
+                  <div class="form-group">
+                    <label>Intake Date</label>
+                    <input type="date" id="per-intake_date">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Street</label>
+                  <input type="text" id="per-street">
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>City</label>
+                    <input type="text" id="per-city">
+                  </div>
+                  <div class="form-group">
+                    <label>ZIP</label>
+                    <input type="text" id="per-zip">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Cell Phone</label>
+                    <input type="text" id="per-cell_phone">
+                  </div>
+                  <div class="form-group">
+                    <label>Home Phone</label>
+                    <input type="text" id="per-home_phone">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Other Phone</label>
+                    <input type="text" id="per-phone">
+                  </div>
+                  <div class="form-group">
+                    <label>Email</label>
+                    <input type="text" id="per-email">
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="fieldset section" id="sec-personal">
+              <legend><button type="button" class="section-toggle">Personal &amp; Employment</button>
+                <span class="section-filled hidden">&#9679;</span></legend>
+              <div class="section-body">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Marital Status</label>
+                    <input type="text" id="per-marital_status">
+                  </div>
+                  <div class="form-group">
+                    <label>Citizenship</label>
+                    <input type="text" id="per-citizenship">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Employer</label>
+                    <input type="text" id="per-employer">
+                  </div>
+                  <div class="form-group">
+                    <label>Occupation</label>
+                    <input type="text" id="per-occupation">
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="fieldset section" id="sec-licences">
+              <legend><button type="button" class="section-toggle">Licenses</button>
+                <span class="section-filled hidden">&#9679;</span></legend>
+              <div class="section-body">
+                <div class="form-group">
+                  <label>Driver's License Number</label>
+                  <input type="text" id="per-license_number">
+                </div>
+                <!-- Each endorsement is a yes/no plus a number that only matters
+                     when the answer is yes, so the number box stays hidden until
+                     the box is ticked. -->
+                <div class="form-row">
+                  <div class="form-group" style="flex-direction:row; align-items:center; gap:6px;">
+                    <input type="checkbox" id="per-cdl_license">
+                    <label for="per-cdl_license">CDL</label>
+                  </div>
+                  <div class="form-group hidden" id="wrap-cdl_number">
+                    <label>CDL Number</label>
+                    <input type="text" id="per-cdl_number">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group" style="flex-direction:row; align-items:center; gap:6px;">
+                    <input type="checkbox" id="per-chauffeur_license">
+                    <label for="per-chauffeur_license">Chauffeur License</label>
+                  </div>
+                  <div class="form-group hidden" id="wrap-chauffeur_number">
+                    <label>Chauffeur Number</label>
+                    <input type="text" id="per-chauffeur_number">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group" style="flex-direction:row; align-items:center; gap:6px;">
+                    <input type="checkbox" id="per-cpl_license">
+                    <label for="per-cpl_license">CPL (concealed pistol)</label>
+                  </div>
+                  <div class="form-group hidden" id="wrap-cpl_number">
+                    <label>CPL Number</label>
+                    <input type="text" id="per-cpl_number">
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="fieldset section" id="sec-emergency" data-collapsed>
+              <legend><button type="button" class="section-toggle">Emergency Contact</button>
+                <span class="section-filled hidden">&#9679;</span></legend>
+              <div class="section-body">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Emergency Contact Name</label>
+                    <input type="text" id="per-emergency_contact_name">
+                  </div>
+                  <div class="form-group">
+                    <label>Relationship</label>
+                    <input type="text" id="per-emergency_contact_relationship">
+                  </div>
+                  <div class="form-group">
+                    <label>Emergency Contact Phone</label>
+                    <input type="text" id="per-emergency_contact_phone">
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="fieldset section" id="sec-medical" data-collapsed>
+              <legend><button type="button" class="section-toggle">Medical</button>
+                <span class="section-filled hidden">&#9679;</span></legend>
+              <div class="section-body">
+                <div class="form-group">
+                  <label>Medical Issues</label>
+                  <textarea id="per-medical_issues" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                  <label>Medications</label>
+                  <textarea id="per-medications" rows="2"></textarea>
+                </div>
+                <div class="form-group" style="flex-direction:row; align-items:center; gap:6px;">
+                  <input type="checkbox" id="per-medical_marijuana_card">
+                  <label for="per-medical_marijuana_card">Medical Marijuana Card</label>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="fieldset section" id="sec-education" data-collapsed>
+              <legend><button type="button" class="section-toggle">Education</button>
+                <span class="section-filled hidden">&#9679;</span></legend>
+              <div class="section-body">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>College</label>
+                    <input type="text" id="per-education_college">
+                  </div>
+                  <div class="form-group">
+                    <label>High School</label>
+                    <input type="text" id="per-education_high_school">
+                  </div>
+                  <div class="form-group">
+                    <label>Highest Grade Completed</label>
+                    <input type="text" id="per-education_highest_grade">
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="fieldset section" id="sec-priors" data-collapsed>
+              <legend><button type="button" class="section-toggle">Prior Record</button>
+                <span class="section-filled hidden">&#9679;</span></legend>
+              <div class="section-body">
+                <div id="person-priors">
+                  <div id="priors-list"></div>
+                  <button type="button" class="btn" id="btn-add-prior">Add Prior Offense</button>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="fieldset section" id="sec-notes">
+              <legend><button type="button" class="section-toggle">Notes</button>
+                <span class="section-filled hidden">&#9679;</span></legend>
+              <div class="section-body">
+                <div class="form-group">
+                  <label>Notes</label>
+                  <textarea id="per-notes" rows="4"></textarea>
+                </div>
+                <!-- The single address blob that street/city/zip supersede.
+                     Migration 24 kept it as the fallback for rows the back-fill
+                     could not parse; it stays visible, and stays saved, until
+                     its one consumer is switched over to the composed value. -->
+                <div class="form-group">
+                  <label>Address (older single-box form — superseded by Street / City / ZIP above)</label>
+                  <textarea id="per-address" rows="3"></textarea>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+          <div class="col-side">
+            <fieldset class="fieldset">
+              <legend>Cases</legend>
+              <div id="person-cases">Save person first.</div>
+            </fieldset>
+            <!-- A7: paid-to-date per matter, rolled up the same way court dates
+                 are — recorded on the matter, read-only here. -->
+            <fieldset class="fieldset">
+              <legend>Payments</legend>
+              <div id="person-payments">Save person first.</div>
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend>Work Product</legend>
+              <div id="person-work-product">Save person first.</div>
+            </fieldset>
+            <!-- Scanned paper. An Electron app cannot drive a scanner: the user scans
+                 with the scanner's own software, then attaches the file here and
+                 it is COPIED into the client's frozen folder. -->
+            <fieldset class="fieldset" id="person-documents-panel">
+              <legend>Documents</legend>
+              <div id="person-documents">Save person first.</div>
+              <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+                <button type="button" id="btn-add-client-document" class="btn" disabled>Add Document&hellip;</button>
+                <button type="button" id="btn-open-client-folder" class="btn" disabled>Open Folder</button>
+                <span style="font-size:0.85em; color:#666;">or drop files here</span>
+              </div>
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend>Activity</legend>
+              <div id="person-activity">Save person first.</div>
+            </fieldset>
+          </div>
+        </div>
+        <!-- Archiving hides a client from every picker in the app. It used to
+             sit in the toolbar an inch from Save, unguarded. It lives down here
+             now, quiet and out of the way of everyday work, and it asks by name
+             before it fires. Restore is not destructive and asks nothing. -->
+        <div id="person-archive-foot" class="danger-foot hidden">
+          <button id="btn-archive-person" class="btn danger">Archive</button>
+          <span class="danger-foot-note">Archiving hides this client from the pickers. Nothing is deleted, and existing matters keep resolving.</span>
+        </div>
+      </div>
+
+      <!-- NEW MATTER FORK -->
+      <div id="view-matter-fork" class="view hidden">
+        <div class="toolbar">
+          <button id="btn-fork-back" class="btn">&larr; Back</button>
+        </div>
+        <div class="fork-choice-wrap">
+          <p class="fork-choice-prompt">What are you starting?</p>
+          <div class="fork-choice-row">
+            <button id="btn-fork-court" class="btn primary fork-choice-btn">Court Filing</button>
+            <button id="btn-fork-letter" class="btn fork-choice-btn">Letter</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- NEW LETTER: RECIPIENT + MATTER ATTACH -->
+      <div id="view-letter-new" class="view hidden">
+        <h2>New Letter</h2>
+        <div class="form-group">
+          <label>Recipient</label>
+          <div class="combobox-wrapper" id="combo-letter-recipient">
+            <input type="text" id="ltr-recipient_name">
+            <input type="hidden" id="ltr-recipient_person_id">
+            <ul class="combobox-dropdown hidden"></ul>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Client <span style="font-weight:normal; color:#666;">(the letter is saved in this client's folder)</span></label>
+          <div class="combobox-wrapper" id="combo-letter-client">
+            <input type="text" id="ltr-client_name" placeholder="None — saved in General Letters">
+            <input type="hidden" id="ltr-client_person_id">
+            <ul class="combobox-dropdown hidden"></ul>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Related matter (optional)</label>
+          <div class="combobox-wrapper" id="combo-letter-matter">
+            <input type="text" id="ltr-matter_name">
+            <input type="hidden" id="ltr-matter_id">
+            <ul class="combobox-dropdown hidden"></ul>
+          </div>
+        </div>
+        <button id="btn-create-letter" class="btn primary">Continue</button>
+        <button id="btn-cancel-letter" class="btn">Cancel</button>
+      </div>
+
+      <!-- ADD DOCUMENTS (from Home). Files a scan under a client, and
+           optionally one of that client's cases. The whole screen is a drop
+           target; files dropped before a client is picked are held. -->
+      <div id="view-add-documents" class="view hidden">
+        <h2>Add Documents</h2>
+        <div class="form-group">
+          <label>Client</label>
+          <div class="combobox-wrapper" id="combo-adddocs-client">
+            <input type="text" id="adddocs-client_name">
+            <input type="hidden" id="adddocs-person_id">
+            <ul class="combobox-dropdown hidden"></ul>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="adddocs-matter_id">Case</label>
+          <select id="adddocs-matter_id">
+            <option value="">Not tied to a case</option>
+          </select>
+        </div>
+        <div id="adddocs-held" class="hidden"></div>
+        <div class="adddocs-actions">
+          <button id="btn-adddocs-add-held" class="btn primary hidden">Add Files</button>
+          <button id="btn-adddocs-choose" class="btn primary">Choose Files&hellip;</button>
+          <button id="btn-adddocs-cancel" class="btn">Cancel</button>
+        </div>
+        <p style="color:#555; margin:0;">Or drag files onto this screen.</p>
+      </div>
+
+      <!-- MATTER DETAIL VIEW -->
+      <div id="view-matter-detail" class="view hidden">
+        <div class="toolbar">
+          <button id="btn-back-matter" class="btn">&larr; Back</button>
+          <button id="btn-save-matter" class="btn primary">Save Matter</button>
+          <button id="btn-goto-generate" class="btn hidden">Generate Document...</button>
+          <!-- Scans for this case go into its Uploads folder, filed under the
+               case's client. Files can also be dropped anywhere on this screen. -->
+          <button id="btn-matter-add-documents" class="btn hidden">Add Documents&hellip;</button>
+          <button id="btn-matter-open-folder" class="btn hidden">Open Folder</button>
+          <button id="btn-archive-matter" class="btn hidden">Archive Matter</button>
+          <span id="matter-archived-note" style="margin-left:8px; color:#a00;"></span>
+          <span id="matter-upload-note" style="margin-left:8px; color:#555;"></span>
+
+          <button id="btn-wizard-back" class="btn hidden">&larr; Back</button>
+          <span id="wizard-step-label" class="hidden" style="margin-left:8px; font-weight:bold; color:#555;"></span>
+          <button id="btn-wizard-next" class="btn primary hidden" style="margin-left:8px;">Next &rarr;</button>
+        </div>
+
+        <!-- Quiet, never blocking. Same rules as the Generate screen's amber
+             box, deliberately softer here: this is a note while you work, not
+             a warning at the point of filing. -->
+        <div id="matter-issues" class="hidden" style="margin:0 0 10px; padding:6px 10px; border-left:3px solid #c8c8c8; background:#f6f6f6; color:#555; font-size:0.9em;"></div>
+        <!-- The stale-stage nudge. A quiet line, in the same style as the
+             issue list above it: a court date has been and gone and the
+             stage still reads the stage that date was supposed to end.
+             The app never moves the stage itself (design §7) — it cannot
+             know whether a hearing was adjourned, waived, or resolved by
+             plea, and a wrong stage on a criminal file is worse than a
+             stale one. -->
+        <div id="matter-stage-note" class="hidden" style="margin:0 0 10px; padding:6px 10px; border-left:3px solid #c8c8c8; background:#f6f6f6; color:#555; font-size:0.9em;"></div>
+
+        <div class="form-grid">
+          <div class="col-main">
+            <div id="wizard-step-1-fields">
+            <fieldset class="fieldset">
+              <legend>Parties & Role</legend>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Matter Type</label>
+                  <select id="mat-matter_type_id"></select>
+                </div>
+                <div class="form-group">
+                  <label>Our Client Role</label>
+                  <select id="mat-client_role">
+                    <!-- Blank first: a new case must choose its side, never
+                         inherit the last case's (it decides "Attorney for …"). -->
+                    <option value="">— choose —</option>
+                    <option value="plaintiff">Plaintiff</option>
+                    <option value="defendant">Defendant</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Caption Style</label>
+                  <select id="mat-caption_style">
+                    <option value="full">List all parties</option>
+                    <option value="et_al">First party et al.</option>
+                    <option value="et_al_force">Force "et al." (even with one named party)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-grid">
+                <div class="col-side">
+                  <div style="margin-bottom:4px; font-weight:bold;">Plaintiffs <button class="btn" style="padding:0 4px;" onclick="addParty('plaintiff')">+</button></div>
+                  <div id="plaintiff-list"></div>
+                </div>
+                <div class="col-side">
+                  <div style="margin-bottom:4px; font-weight:bold;">Defendants <button class="btn" style="padding:0 4px;" onclick="addParty('defendant')">+</button></div>
+                  <div id="defendant-list"></div>
+                </div>
+              </div>
+              <div class="form-group" style="margin-top:8px;">
+                <label>Client Relationship?</label>
+                <div style="display:flex; gap:6px;">
+                  <label class="btn"><input type="radio" name="mat-engagement_status" value="Yes" style="margin-right:4px;">Yes</label>
+                  <label class="btn"><input type="radio" name="mat-engagement_status" value="No" style="margin-right:4px;">No</label>
+                  <label class="btn"><input type="radio" name="mat-engagement_status" value="Possible" style="margin-right:4px;">Possible</label>
+                  <label class="btn"><input type="radio" name="mat-engagement_status" value="Probable" style="margin-right:4px;">Probable</label>
+                  <label class="btn"><input type="radio" name="mat-engagement_status" value="N/A" style="margin-right:4px;">N/A</label>
+                </div>
+              </div>
+            </fieldset>
+            </div>
+
+            <div id="wizard-step-2-fields">
+            <!-- The case half of the intake questionnaire (migration 26).
+                 Deliberately case-level, not on the person: a client who comes
+                 back in two years on a new charge must not carry this case's
+                 fee quote around as though it were still true.
+                 There is NO "Current Charge" input here on purpose. The charge
+                 prints in the caption of every filing, so it lives in the
+                 Caption Notes list below and nowhere else. -->
+            <fieldset class="fieldset" id="matter-intake-fields">
+              <legend>Case Intake</legend>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Where does the case stand?</label>
+                  <select id="mat-stage">
+                    <option value=""></option>
+                    <option value="Not yet charged">Not yet charged</option>
+                    <option value="Cited, no court date">Cited, no court date</option>
+                    <option value="Arraignment pending">Arraignment pending</option>
+                    <option value="Pretrial">Pretrial</option>
+                    <option value="Post-conviction or PV">Post-conviction or PV</option>
+                    <option value="Appeal">Appeal</option>
+                    <!-- The value is stored on matters.stage and keyed in renderer.js
+                         STAGE_FIELDS, so it keeps its old spelling; only the
+                         visible text is American. -->
+                    <option value="Licence restoration">License restoration</option>
+                  </select>
+                  <div style="font-size:0.8em; color:#666; margin-top:2px;">
+                    Not the same question as &ldquo;Client Relationship?&rdquo; above,
+                    which is whether we took the case.
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Current Charge</label>
+                  <div style="font-size:0.9em; color:#666; padding-top:6px;">
+                    Enter it as a <strong>Caption Note</strong> below &mdash; charges
+                    print under the case number on every filing, so that list is the
+                    only place they are kept.
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Date of Offense</label>
+                  <input type="date" id="mat-date_of_offense">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Police Agency</label>
+                  <input type="text" id="mat-police_agency" placeholder="e.g. Michigan State Police – Sampleton Post">
+                </div>
+                <div class="form-group">
+                  <label>Citation / Ticket Number</label>
+                  <input type="text" id="mat-citation_number">
+                </div>
+                <div class="form-group">
+                  <label>BAC</label>
+                  <input type="text" id="mat-bac" placeholder="e.g. 0.14, refused, n/a">
+                  <div style="font-size:0.8em; color:#666; margin-top:2px;">
+                    Free text &mdash; &ldquo;refused&rdquo; is an answer.
+                  </div>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Referred By</label>
+                  <input type="text" id="mat-referred_by">
+                </div>
+                <div class="form-group">
+                  <label>Fee Quoted</label>
+                  <input type="text" id="mat-fee_quoted" placeholder="e.g. $2,500 flat, TBD after arraignment">
+                </div>
+              </div>
+            </fieldset>
+            <!-- Court dates for THIS case. Deliberately much less than a
+                 calendar: record and roll up, nothing more. No calendar view,
+                 no firm-wide docket, no notifications and no computed
+                 deadlines — a wrong appeal window is worse than none.
+                 Dates hang off the case, not the person: a client with three
+                 cases has three streams, and the profile shows the soonest
+                 across all of them. -->
+            <fieldset class="fieldset" id="matter-events-fields">
+              <legend>Court Dates</legend>
+              <div style="font-size:0.8em; color:#666; margin-bottom:6px;">
+                Hearings and deadlines on this case. Tick <strong>Done</strong> once one
+                has happened &mdash; a done date stops counting as the next one without
+                being deleted.
+              </div>
+              <div id="matter-events-list"></div>
+              <button type="button" class="btn" id="btn-add-event">Add Court Date</button>
+            </fieldset>
+            <!-- A7: what has actually been paid on this matter, flat-fee style.
+                 fee_quoted (above, in the intake fields) is untouched free text —
+                 this is a separate running total, never a computed balance
+                 against it. -->
+            <fieldset class="fieldset" id="matter-payments-fields">
+              <legend>Payments</legend>
+              <div style="font-size:0.8em; color:#666; margin-bottom:6px;">
+                Payments actually received on this matter. Does not touch Fee Quoted above.
+              </div>
+              <div id="matter-payments-list"></div>
+              <div style="margin:4px 0; font-weight:bold;">Paid to date: <span id="matter-payments-total">$0.00</span></div>
+              <button type="button" class="btn" id="btn-add-payment">Add Payment</button>
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend>Activity</legend>
+              <div id="matter-activity">Save matter first.</div>
+            </fieldset>
+            <!-- A10: when court, judge or attorney changed and to what — a
+                 record, not a live value. Already-generated documents are
+                 unaffected either way: each freezes its own matter_snapshot
+                 at generation, and the rendered file itself is static. -->
+            <fieldset class="fieldset">
+              <legend>Transfer History</legend>
+              <div id="matter-transfers">Save matter first.</div>
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend>Matter Details</legend>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Matter Name (Internal)</label>
+                  <input type="text" id="mat-short_name">
+                </div>
+                <div class="form-group">
+                  <label>Case Number</label>
+                  <input type="text" id="mat-case_number">
+                  <label style="font-weight:normal; margin-top:4px;">
+                    <input type="checkbox" id="mat-case_number_pending">
+                    Pending / not yet official — suppress from printed caption
+                  </label>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Court</label>
+                  <div class="combobox-wrapper" id="combo-court">
+                    <input type="text" id="mat-court">
+                    <input type="hidden" id="mat-court_id">
+                    <ul class="combobox-dropdown hidden"></ul>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Judge</label>
+                  <div class="combobox-wrapper" id="combo-judge">
+                    <input type="text" id="mat-judge">
+                    <input type="hidden" id="mat-judge_id">
+                    <ul class="combobox-dropdown hidden"></ul>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Assigned Attorney <span style="font-weight:normal; color:#666;">(who is currently handling this case; changes are recorded below)</span></label>
+                  <select id="mat-attorney_id">
+                    <option value="">(none set)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Plaintiff Side Label</label>
+                  <input type="text" id="mat-plaintiff_label" placeholder="Plaintiff">
+                  <div style="font-size:0.8em; color:#666; margin-top:2px;">
+                    On appeal use e.g. &ldquo;Plaintiff &ndash; Appellee&rdquo;.
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Defendant Side Label</label>
+                  <input type="text" id="mat-party_label" list="party-label-options" placeholder="Defendant">
+                  <datalist id="party-label-options">
+                    <option value="Defendant"></option>
+                    <option value="Respondent"></option>
+                    <option value="Defendant – Appellant"></option>
+                    <option value="Defendant – Appellee"></option>
+                  </datalist>
+                  <div style="font-size:0.8em; color:#666; margin-top:2px;">
+                    Used in the caption, the body sentence and the signature block.
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Caption Authority (overrides the matter type)</label>
+                  <input type="text" id="mat-caption_authority" placeholder="e.g. PEOPLE OF THE STATE OF MICHIGAN">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>
+                  Caption Notes
+                  <button class="btn" style="padding:0 6px;" id="btn-add-note" type="button">+</button>
+                  <span style="font-weight:normal; color:#666;">(charges and anything else printed under the case number, in this order)</span>
+                </label>
+                <div id="matter-notes-list"></div>
+              </div>
+              <div class="form-group">
+                <label>
+                  Additional Counsel
+                  <button class="btn" style="padding:0 6px;" id="btn-add-cocounsel" type="button">+</button>
+                  <span style="font-weight:normal; color:#666;">(other attorneys of record on this case, printed under the signing attorney)</span>
+                </label>
+                <div id="matter-cocounsel-list"></div>
+                <div style="font-size:0.8em; color:#666; margin-top:2px;">
+                  One note per line. A compound charge can be a single note
+                  (&ldquo;OWI, Speed 11-15, BAC 0.XX&rdquo;) or three separate
+                  ones &mdash; nothing else in the caption moves either way.
+                  Pasting several lines into a note splits them into rows.
+                </div>
+              </div>
+              <div class="form-group">
+                <label>
+                  Additional Case Numbers
+                  <button class="btn" style="padding:0 6px;" id="btn-add-case" type="button">+</button>
+                  <span style="font-weight:normal; color:#666;">(appeals carry the case below as well)</span>
+                </label>
+                <div id="matter-cases-list"></div>
+              </div>
+              <div class="form-group">
+                <label>Opposing Counsel</label>
+                <div style="display:flex; gap:6px;">
+                  <label class="btn"><input type="radio" name="oppcounsel_status" value="named" style="margin-right:4px;">Named</label>
+                  <label class="btn"><input type="radio" name="oppcounsel_status" value="pro_se" style="margin-right:4px;">Pro se</label>
+                  <label class="btn"><input type="radio" name="oppcounsel_status" value="unknown" style="margin-right:4px;">Unknown</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Opposing Counsel (for the appellate caption block)</label>
+                <div class="combobox-wrapper" id="combo-oppcounsel">
+                  <input type="text" id="mat-oppcounsel_name" placeholder="Search people...">
+                  <input type="hidden" id="mat-opposing_counsel_person_id">
+                  <ul class="combobox-dropdown hidden"></ul>
+                </div>
+                <div style="font-size:0.8em; color:#666; margin-top:2px;">
+                  Uses their firm, bar number and address from the People tab.
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Opposing Counsel Block (for Proof of Service)</label>
+                <textarea id="mat-opposing_counsel" rows="4"></textarea>
+              </div>
+            </fieldset>
+            </div>
+          </div>
+
+          <div id="matter-detail-sideinfo" class="col-side">
+            <!-- The case's court, judge and opposing counsel, then anyone added
+                 to this case, each with their latest note. Notes are for the
+                 office and never print. -->
+            <fieldset class="fieldset" id="matter-who-fields">
+              <legend>Who's involved</legend>
+              <div id="matter-who"></div>
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend>Documents</legend>
+              <div style="font-size:0.8em; color:#666; margin-bottom:6px;">
+                Every document generated for this matter, newest first. "Regenerate"
+                reopens it with the matter and attorney details frozen exactly as they
+                were when it was made, even if the matter has changed since.
+              </div>
+              <div id="documents-list" style="max-height: 420px; overflow-y: auto;"></div>
+            </fieldset>
+
+            <fieldset class="fieldset">
+              <legend>
+                Packets
+                <button class="btn" style="padding:0 6px;" id="btn-new-packet" type="button">+</button>
+              </legend>
+              <div style="font-size:0.8em; color:#666; margin-bottom:6px;">
+                A packet is one filing &mdash; several documents sent together on one
+                date, into their own folder. The enclosure list and the proof of
+                service are built from the packet's contents, never typed.
+              </div>
+              <div id="packets-list"></div>
+            </fieldset>
+          </div>
+        </div>
+      </div>
+
+      <!-- WIZARD STEP 3 — WHAT ARE WE FILING? -->
+      <div id="view-wizard-doctype" class="view hidden">
+        <div class="toolbar">
+          <button id="btn-wizard3-back" class="btn">&larr; Back</button>
+          <span style="margin-left:8px; font-weight:bold; color:#555;">Step 3 of 3</span>
+        </div>
+        <div style="max-width:640px; margin:0 auto;">
+          <input type="text" id="wizard-doctype-search" placeholder="Search filing types..." style="width:100%; margin-bottom:12px;">
+          <div id="wizard-doctype-groups"></div>
+        </div>
+      </div>
+
+      <!-- PACKET VIEW — one intake form for a whole filing -->
+      <div id="view-packet" class="view hidden">
+        <div class="toolbar">
+          <button id="btn-back-from-packet" class="btn">&larr; Back</button>
+          <button id="btn-save-packet" class="btn">Save Packet</button>
+          <button id="btn-generate-packet-pdf" class="btn primary">Generate Packet (PDF)</button>
+          <button id="btn-generate-packet-docx" class="btn primary">Generate Packet (Word)</button>
+        </div>
+        <div id="packet-result" class="hidden" style="margin:0 0 10px; padding:8px 10px; border:1px solid #9ac39a; background:#eef7ee;">
+          <div id="packet-result-text" style="margin-bottom:6px; white-space:pre-wrap;"></div>
+          <button type="button" id="btn-open-packet-folder" class="btn primary">Show Packet Folder</button>
+        </div>
+        <div id="packet-warnings" class="hidden" style="margin:0 0 10px; padding:8px 10px; border:1px solid #d6c36b; background:#fdf9e6;"></div>
+        <div class="two-col">
+          <div class="col-main">
+            <fieldset class="fieldset">
+              <legend>Filing Details</legend>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Packet Type</label>
+                  <select id="pk-kind"></select>
+                </div>
+                <div class="form-group">
+                  <label>Letterhead <span style="font-weight:normal; color:#666;">(for the letter and memo)</span></label>
+                  <select id="pk-letterhead_id"></select>
+                </div>
+              </div>
+              <div id="pk-client-row" class="form-group hidden">
+                <label>Client <span style="font-weight:normal; color:#666;">(the letter is saved in this client's folder)</span></label>
+                <div class="combobox-wrapper" id="combo-packet-client">
+                  <input type="text" id="pk-client_name" placeholder="None — saved in General Letters">
+                  <input type="hidden" id="pk-client_person_id">
+                  <ul class="combobox-dropdown hidden"></ul>
+                </div>
+                <div id="pk-client-frozen" class="hidden" style="font-size:0.9em; color:#555;"></div>
+              </div>
+              <div class="form-group" style="flex-direction:row; align-items:center;">
+                <input type="checkbox" id="pk-include-signature"> <label for="pk-include-signature">Include signature image (otherwise prints /S/)</label>
+              </div>
+              <div id="pk-body-source-row" class="form-group hidden" style="flex-direction:row; align-items:center; gap:10px;">
+                <label><input type="radio" name="pk-body-source" value="typed" checked> Type it</label>
+                <label><input type="radio" name="pk-body-source" value="attached"> Attach a file</label>
+              </div>
+              <div id="pk-attach-row" class="hidden" style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+                <button type="button" id="btn-pick-letter-scan" class="btn">Attach File&hellip;</button>
+                <span id="pk-attach-filename" style="font-size:0.85em; color:#666;"></span>
+                <div id="pk-attach-note" style="font-size:0.8em; color:#a00;"></div>
+              </div>
+              <div id="packet-fields"></div>
+            </fieldset>
+          </div>
+          <div class="col-side">
+            <fieldset class="fieldset">
+              <legend>Documents in this packet</legend>
+              <div style="font-size:0.8em; color:#666; margin-bottom:6px;">
+                Generated in this order, into one folder. Items marked
+                <strong>enclosure</strong> are the ones the transmittal letter
+                lists and the proof of service certifies.
+              </div>
+              <div id="packet-contents"></div>
+            </fieldset>
+          </div>
+        </div>
+        <div id="packet-preview-panel" class="hidden" style="margin-top:12px; border:1px solid #ccc;">
+          <div style="display:flex; align-items:center; gap:10px; padding:6px 10px; background:#f5f5f5; border-bottom:1px solid #ccc;">
+            <strong>Preview</strong>
+            <button type="button" id="btn-packet-preview-zoom-out" class="btn" style="margin-left:auto;">&minus;</button>
+            <span id="packet-preview-zoom-label" style="min-width:3em; text-align:center;">100%</span>
+            <button type="button" id="btn-packet-preview-zoom-in" class="btn">+</button>
+          </div>
+          <div style="overflow:auto; max-height:70vh; background:#888; padding:12px;">
+            <iframe id="packet-preview-frame" style="width:8.5in; min-height:11in; border:none; background:#fff; transform-origin:top left;"></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- GENERATE VIEW -->
+      <div id="view-generate" class="view hidden">
+        <div class="toolbar">
+          <button id="btn-back-from-gen" class="btn">&larr; Back</button>
+          <button id="btn-generate-pdf" class="btn primary">Generate PDF</button>
+          <button id="btn-generate-docx" class="btn primary">Generate Word</button>
+          <button id="btn-preview" class="btn" type="button">Preview</button>
+        </div>
+        <div id="gen-result" class="hidden" style="margin:0 0 10px; padding:8px 10px; border:1px solid #9ac39a; background:#eef7ee;">
+          <div id="gen-result-text" style="margin-bottom:6px;"></div>
+          <button type="button" id="btn-open-doc" class="btn primary">Open Document</button>
+          <button type="button" id="btn-show-folder" class="btn">Show in Folder</button>
+        </div>
+        <div id="gen-warnings" class="hidden" style="margin:0 0 10px; padding:8px 10px; border:1px solid #d0a000; background:#fffbe6;"></div>
+        <div id="gen-regen-banner" class="hidden" style="margin:0 0 10px; padding:8px 10px; border:1px solid #7a9bc4; background:#eaf1fb;">
+          <span id="gen-regen-banner-text"></span>
+          <a href="#" id="gen-regen-discard" style="margin-left:8px;">Use current matter data instead</a>
+        </div>
+        <fieldset class="fieldset" style="max-width: 100%;">
+          <legend>Generate Settings</legend>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Signing Attorney</label>
+              <select id="gen-attorney"></select>
+            </div>
+            <div class="form-group">
+              <label>Document Type</label>
+              <select id="gen-doctype"></select>
+            </div>
+          </div>
+          <div class="form-group" style="flex-direction:row; align-items:center;">
+            <input type="checkbox" id="gen-include-signature"> <label for="gen-include-signature">Include signature image (otherwise prints /S/)</label>
+          </div>
+          <div id="gen-dynamic-fields"></div>
+        </fieldset>
+        <div id="preview-panel" class="hidden" style="margin-top:12px; border:1px solid #ccc;">
+          <div style="display:flex; align-items:center; gap:10px; padding:6px 10px; background:#f5f5f5; border-bottom:1px solid #ccc;">
+            <strong>Preview</strong>
+            <label style="margin-left:auto; display:flex; align-items:center; gap:4px; font-size:0.85em;">
+              <input type="checkbox" id="preview-include-signature"> Include signature image
+            </label>
+            <button type="button" id="btn-preview-zoom-out" class="btn">&minus;</button>
+            <span id="preview-zoom-label" style="min-width:3em; text-align:center;">100%</span>
+            <button type="button" id="btn-preview-zoom-in" class="btn">+</button>
+          </div>
+          <div style="overflow:auto; max-height:70vh; background:#888; padding:12px;">
+            <iframe id="preview-frame" style="width:8.5in; min-height:11in; border:none; background:#fff; transform-origin:top left;"></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- MY OFFICE VIEW (ids keep the old "attorneys" name) -->
+      <div id="view-attorneys" class="view hidden">
+        <div class="toolbar">
+          <button id="btn-new-attorney" class="btn primary">Add Signing Profile</button>
+          <button id="btn-duplicate-attorney" class="btn hidden" type="button">Duplicate</button>
+          <button id="btn-save-attorney" class="btn hidden">Save Selection</button>
+        </div>
+        <div class="form-grid">
+          <div class="col-side">
+            <table class="data-table">
+              <thead><tr><th>Signs As</th><th>Name</th></tr></thead>
+              <tbody id="attorneys-list"></tbody>
+            </table>
+          </div>
+          <div class="col-main" id="attorney-edit-pane" style="display:none;">
+            <fieldset class="fieldset">
+              <legend>Signing Details</legend>
+              <input type="hidden" id="att-id">
+              <div class="form-group">
+                <label>Signs As <span style="font-weight:normal; color:#666;">(how this shows in the list, e.g. &ldquo;Exampleton City Attorney&rdquo;)</span></label>
+                <input type="text" id="att-label">
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>Name</label><input type="text" id="att-name"></div>
+                <div class="form-group"><label>Bar Number</label><input type="text" id="att-bar_number"></div>
+              </div>
+              <div class="form-group"><label>Firm / Office Line <span style="font-weight:normal; color:#666;">(printed above the name)</span></label><input type="text" id="att-firm_name"></div>
+              <div class="form-group"><label>Firm Address</label><textarea id="att-firm_address" rows="3"></textarea></div>
+              <div class="form-row">
+                <div class="form-group"><label>Firm Phone</label><input type="text" id="att-firm_phone"></div>
+                <div class="form-group"><label>Firm Email</label><input type="text" id="att-firm_email"></div>
+              </div>
+              <div class="form-group" style="flex-direction:row; align-items:center;">
+                <input type="checkbox" id="att-is_default"> <label for="att-is_default">Pre-select this one when generating</label>
+              </div>
+              <div class="form-group">
+                <label>Signature Image <span style="font-weight:normal; color:#666;">(optional, appears above the signature line)</span></label>
+                <div style="display:flex; gap:6px; align-items:flex-start;">
+                  <button type="button" id="btn-pick-signature" class="btn">Choose Image&hellip;</button>
+                  <button type="button" id="btn-recrop-signature" class="btn">Recrop&hellip;</button>
+                  <button type="button" id="btn-clear-signature" class="btn">Remove</button>
+                  <img id="att-signature-preview" alt="" style="max-height:60px; max-width:260px; border:1px solid #d4d4d4; display:none; background:#fff;">
+                </div>
+                <input type="hidden" id="att-signature_image">
+                <div id="signature-note" style="font-size:0.8em; color:#a00; margin-top:2px;"></div>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIGNATURE CROP MODAL -->
+      <div id="sig-crop-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; display:flex; align-items:center; justify-content:center;">
+        <div style="background:#fff; padding:16px; border-radius:4px; max-width:90vw;">
+          <div style="margin-bottom:8px;">Drag to position, resize the box to crop. Locked to signature proportions.</div>
+          <div id="sig-crop-stage" style="position:relative; overflow:hidden; max-width:80vw; max-height:60vh;">
+            <img id="sig-crop-source" style="display:block; max-width:none;">
+            <div id="sig-crop-box" style="position:absolute; border:2px dashed #09c; cursor:move;"></div>
+          </div>
+          <div style="margin-top:10px; display:flex; gap:8px; justify-content:flex-end;">
+            <button type="button" id="btn-crop-cancel" class="btn">Cancel</button>
+            <button type="button" id="btn-crop-confirm" class="btn primary">Use This Crop</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOLDER-OWNER PICKER (renderer.js ensureFolderOwner). Shown when a case
+           has several clients, or none, and nothing has been saved for it yet:
+           the case folder is created once under one client and never moves, so
+           the app asks rather than guessing. Client radios are built in JS. -->
+      <div id="folder-owner-picker" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; display:flex; align-items:center; justify-content:center;">
+        <div style="background:#fff; padding:16px; border-radius:4px; width:460px; max-width:90vw;">
+          <h3 id="folder-owner-heading" style="margin:0 0 6px;">Which client's folder should this case be saved in?</h3>
+          <div id="folder-owner-case" style="margin-bottom:10px; color:#555;"></div>
+          <div id="folder-owner-options"></div>
+          <label style="display:block; margin:4px 0;"><input type="radio" name="folder-owner" value="0" style="margin-right:6px;">No Client</label>
+          <div id="folder-owner-none-note" class="hidden" style="margin-top:8px; color:#555; font-size:0.9em;">
+            No client is listed on this case. To file it under a client, Cancel,
+            add the client to the case's parties, and generate again.
+          </div>
+          <div style="margin-top:8px; color:#555; font-size:0.9em;">
+            The folder is set once and does not move afterwards.
+          </div>
+          <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
+            <button type="button" id="btn-folder-owner-cancel" class="btn">Cancel</button>
+            <button type="button" id="btn-folder-owner-save" class="btn primary">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS VIEW -->
+      <div id="view-settings" class="view hidden">
+        <fieldset class="fieldset" style="max-width: 500px;">
+          <legend>Application Settings</legend>
+          <div class="form-group">
+            <label for="set-output_root">Documents Folder</label>
+            <div style="display:flex; gap:6px;">
+              <input type="text" id="set-output_root" readonly style="flex:1;">
+              <button type="button" id="btn-choose-output-root" class="btn">Choose Folder…</button>
+            </div>
+            <div style="font-size:0.8em; color:#666; margin-top:2px;">
+              Where your Legal Documents folder is. If you move that folder (to a new
+              computer or another drive), choose its new location here and your saved
+              documents will be found there.
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="fieldset" style="max-width: 900px; margin-top: 1em;">
+          <legend>Matter Types</legend>
+          <p style="margin: 0 0 0.75em; color: #444; font-size: 0.9em;">
+            A matter type is a kind of work &mdash; Criminal Defense, Civil,
+            Prosecution, Appellate. It pre-fills a new matter's caption authority
+            and which signing profile signs; the matter can change either. It
+            does not decide where files are saved: those go under the client.
+            A city, township or business you work for is set up as an
+            Organization client on the People tab, with its own caption name
+            and signing profile, not as a matter type.
+          </p>
+          <div id="matter-types-manage"></div>
+          <button type="button" id="btn-add-matter-type" class="btn" style="margin-top:6px;">Add Matter Type</button>
+        </fieldset>
+
+        <fieldset class="fieldset" style="max-width: 900px; margin-top: 1em;">
+          <legend>Letterheads</legend>
+          <p style="margin: 0 0 0.75em; color: #444; font-size: 0.9em;">
+            Used by letters and memoranda &mdash; the masthead, address and seal
+            printed at the top of the page. Everything here prints
+            <strong>exactly as typed</strong>. The reference initials separator is
+            deliberately different between letterheads: a colon on city
+            letterhead, a slash on personal.
+          </p>
+          <div id="letterheads-manage"></div>
+          <button type="button" id="btn-add-letterhead" class="btn" style="margin-top:6px;">Add Letterhead</button>
+        </fieldset>
+
+        <fieldset class="fieldset" style="max-width: 500px; margin-top: 1em;">
+          <legend>Backup</legend>
+          <p style="margin: 0 0 0.75em; color: #444; font-size: 0.9em;">
+            Your matters and people are stored on this computer only. The app keeps
+            automatic backups, but those sit on the same drive &mdash; use
+            <strong>Back Up Now</strong> to save a copy somewhere else, such as
+            OneDrive or a USB stick.
+          </p>
+          <div class="form-group">
+            <button id="btn-backup-now" class="btn">Back Up Now&hellip;</button>
+            <button id="btn-restore-backup" class="btn">Restore From Backup&hellip;</button>
+          </div>
+          <p id="backup-status" style="margin: 0.5em 0 0; color: #206020; font-size: 0.9em;"></p>
+        </fieldset>
+      </div>
+
+      <!-- CONTACTS VIEW: judges, clerks, opposing counsel — people rows with
+           is_contact = 1. -->
+      <div id="view-contacts" class="view hidden">
+        <div class="toolbar">
+          <button id="btn-new-contact" class="btn primary">New Contact</button>
+          <input type="text" id="contacts-search" placeholder="Filter by name, role or where they work..." style="margin-left:8px; width:300px;">
+          <label style="margin-left:8px; font-weight:normal;">
+            <input type="checkbox" id="contacts-show-archived"> Show archived
+          </label>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr><th>Name</th><th>Role</th><th>Works at</th><th>Latest note</th></tr>
+          </thead>
+          <tbody id="contacts-list"></tbody>
+        </table>
+      </div>
+
+      <!-- CONTACT PAGE. A contact is a people row (is_contact = 1). For a
+           judge, the name is also judges.name — the caption source — and the
+           two are saved together. Address is Street / City / ZIP, the same
+           three columns every other person uses (migration 24). -->
+      <div id="view-contact-detail" class="view hidden">
+        <div class="toolbar">
+          <button id="btn-back-contact" class="btn">&larr; Back</button>
+          <button id="btn-save-contact" class="btn primary">Save Contact</button>
+          <span id="contact-archived-note" style="margin-left:8px; color:#a00;"></span>
+        </div>
+        <input type="hidden" id="con-id">
+        <fieldset class="fieldset" style="max-width: 700px;">
+          <legend>Contact</legend>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="con-display_name">Name</label>
+              <input type="text" id="con-display_name">
+            </div>
+            <div class="form-group">
+              <label for="con-contact_role">Role</label>
+              <select id="con-contact_role"></select>
+              <div id="con-role-add" class="hidden" style="display:flex; gap:4px; margin-top:4px;">
+                <input type="text" id="con-role-new" placeholder="New role" style="flex:1;">
+                <button type="button" id="btn-con-role-add" class="btn">Add</button>
+                <button type="button" id="btn-con-role-cancel" class="btn">Cancel</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="con-works_at">Works at</label>
+            <div class="combobox-wrapper" id="combo-con-works-at">
+              <input type="text" id="con-works_at" placeholder="A court or an organization...">
+              <input type="hidden" id="con-works_at_court_id">
+              <input type="hidden" id="con-works_at_org_id">
+              <ul class="combobox-dropdown hidden"></ul>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="con-phone">Phone</label>
+              <input type="text" id="con-phone">
+            </div>
+            <div class="form-group">
+              <label for="con-email">Email</label>
+              <input type="text" id="con-email">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="con-street">Office street</label>
+            <input type="text" id="con-street">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="con-city">City</label>
+              <input type="text" id="con-city">
+            </div>
+            <div class="form-group">
+              <label for="con-zip">ZIP</label>
+              <input type="text" id="con-zip">
+            </div>
+          </div>
+        </fieldset>
+        <!-- Person-to-person links (contact_links), filled by
+             renderContactLinks. One row per pair; shown on both people's pages. -->
+        <fieldset class="fieldset" style="max-width: 700px;">
+          <legend>Connected to</legend>
+          <div id="contact-links"></div>
+        </fieldset>
+        <!-- Cases this contact is on: judge, opposing counsel, or added by
+             hand (matter_contacts). Filled by renderContactCases. -->
+        <fieldset class="fieldset" style="max-width: 700px;">
+          <legend>Cases</legend>
+          <div id="contact-cases"></div>
+        </fieldset>
+        <!-- Dated notes (contact_notes), filled by renderNotes. Notes stay in
+             the app: neither document renderer reads them. -->
+        <fieldset class="fieldset" style="max-width: 700px;">
+          <legend>Notes</legend>
+          <div id="contact-notes"></div>
+        </fieldset>
+        <div id="contact-archive-foot" class="danger-foot hidden">
+          <button id="btn-archive-contact" class="btn danger">Archive</button>
+          <span class="danger-foot-note">Archiving hides this contact from the list and the pickers. Nothing is deleted, and existing cases keep resolving.</span>
+        </div>
+      </div>
+
+      <!-- CONTACTS > COURTS VIEW -->
+      <div id="view-courts" class="view hidden">
+        <div class="toolbar">
+          <button id="btn-new-court" class="btn primary">New Court</button>
+          <input type="text" id="courts-search" placeholder="Filter by name, city or county..." style="margin-left:8px; width:300px;">
+          <label style="margin-left:8px; font-weight:normal;">
+            <input type="checkbox" id="courts-show-archived"> Show archived
+          </label>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr><th>Name</th><th>City</th><th>County</th><th style="text-align:right;">People</th><th style="text-align:right;">Cases</th></tr>
+          </thead>
+          <tbody id="courts-list"></tbody>
+        </table>
+      </div>
+
+      <!-- COURT PAGE. A court's name, header line, city and county all print
+           on documents (captions join them live); address and phone are for
+           the office only. A judge's name and archiving live on the judge's
+           own contact page (a judge is a contact at this court). -->
+      <div id="view-court-detail" class="view hidden">
+        <div class="toolbar">
+          <button id="btn-back-court" class="btn">&larr; Back</button>
+          <button id="btn-save-court" class="btn primary">Save Court</button>
+          <span id="court-archived-note" style="margin-left:8px; color:#a00;"></span>
+        </div>
+        <input type="hidden" id="crt-id">
+        <fieldset class="fieldset" style="max-width: 700px;">
+          <legend>Court</legend>
+          <div class="form-group">
+            <label for="crt-name">Name</label>
+            <input type="text" id="crt-name" placeholder="96th District Court">
+          </div>
+          <div class="form-group">
+            <label for="crt-header_line">Header line</label>
+            <input type="text" id="crt-header_line" placeholder="IN THE 96th District Court">
+            <p style="margin: 4px 0 0.75em; color: #444; font-size: 0.9em;">
+              Printed beneath STATE OF MICHIGAN exactly as typed &mdash; type
+              it the way the court writes it (&ldquo;IN THE 96th District
+              Court&rdquo;). It is never changed to capitals.
+            </p>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="crt-city">City</label>
+              <input type="text" id="crt-city" placeholder="Sampleton">
+            </div>
+            <div class="form-group">
+              <label for="crt-county">County</label>
+              <input type="text" id="crt-county" placeholder="Wayne">
+            </div>
+          </div>
+          <p style="margin: 0 0 0.75em; color: #444; font-size: 0.9em;">
+            City prints on the Stipulation and Order (&ldquo;held in the City
+            of ___&rdquo;); County prints as &ldquo;COUNTY OF ___&rdquo; on
+            every proof of service.
+          </p>
+          <div class="form-group">
+            <label for="crt-address">Address</label>
+            <input type="text" id="crt-address">
+          </div>
+          <div class="form-group">
+            <label for="crt-phone">Phone</label>
+            <input type="text" id="crt-phone">
+          </div>
+        </fieldset>
+        <!-- Dated notes (contact_notes.court_id), filled by renderNotes. -->
+        <fieldset class="fieldset" style="max-width: 700px;">
+          <legend>Notes</legend>
+          <div id="court-notes"></div>
+        </fieldset>
+        <!-- Contacts whose Works at is this court (people.works_at_court_id). -->
+        <fieldset class="fieldset" style="max-width: 700px;">
+          <legend>People at this court</legend>
+          <div id="court-people"></div>
+        </fieldset>
+        <!-- Cases whose court is this court (matters.court_id). -->
+        <fieldset class="fieldset" style="max-width: 700px;">
+          <legend>Cases in this court</legend>
+          <div id="court-cases"></div>
+        </fieldset>
+        <div id="court-archive-foot" class="danger-foot hidden">
+          <button id="btn-archive-court" class="btn danger">Archive</button>
+          <span class="danger-foot-note">Archiving hides this court from the list and the case court picker. Nothing is deleted, and existing cases still print it.</span>
+        </div>
+      </div>
+
+    </main>
+
+    <div id="app-version" style="position:fixed; right:8px; bottom:4px; color:#999; font-size:0.75em; pointer-events:none;"></div>
+
+    <!-- A12: on-request clickthrough tutorial. Never auto-launches. Each step
+         is anchored to a real element id (tutorial-highlight positions over
+         it) so the smoke suite can assert the target still exists — a step
+         pointing at nothing is worse than no tutorial. -->
+    <div id="tutorial-overlay" class="hidden">
+      <div id="tutorial-backdrop"></div>
+      <div id="tutorial-highlight"></div>
+      <div id="tutorial-callout">
+        <div id="tutorial-step-count"></div>
+        <div id="tutorial-title" style="font-weight:bold; margin:4px 0;"></div>
+        <div id="tutorial-text" style="margin-bottom:10px;"></div>
+        <div style="display:flex; justify-content:space-between;">
+          <button type="button" id="btn-tutorial-close" class="btn">Close</button>
+          <div>
+            <button type="button" id="btn-tutorial-prev" class="btn">&larr; Back</button>
+            <button type="button" id="btn-tutorial-next" class="btn primary">Next &rarr;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="document-engine.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

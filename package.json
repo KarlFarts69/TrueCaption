@@ -1,0 +1,85 @@
+{
+  "name": "truecaption",
+  "version": "7.3.0",
+  "description": "Legal Document Generator",
+  "main": "main.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win --x64 --publish never",
+    "check:build-files": "node scripts/check-build-files.js",
+    "smoke": "node scripts/smoke.mjs",
+    "test:migrations": "node scripts/run-in-electron.js scripts/test-migrations.js",
+    "test:folders": "node scripts/test-folders.js",
+    "dist:mac": "electron-builder --mac --publish never"
+  },
+  "build": {
+    "appId": "com.truecaption.app",
+    "productName": "TrueCaption",
+    "files": [
+      "main.js",
+      "folders.js",
+      "db-migrations.js",
+      "db-backup.js",
+      "preload.js",
+      "renderer.js",
+      "document-engine.js",
+      "index.html",
+      "style.css",
+      "print.css",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "icon": "assets/icons/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "mac": {
+      "icon": "assets/icons/icon.icns",
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TrueCaption",
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.2.1",
+    "docx": "^9.0.0"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^24.13.3",
+    "playwright-core": "^1.62.1"
+  }
+}

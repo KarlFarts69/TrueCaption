@@ -1,0 +1,18 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+data.db
+.worktrees/
+Logo Build/
+_to_delete/
+
+# Private working notes — never publish. Kept in the repo root for
+# convenience; they name real people and a live client matter.
+TrueCaption-private-notes/
+
+# Launch video output (hyperframes /brag) — local only.
+brag-output/

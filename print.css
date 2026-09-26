@@ -1,0 +1,276 @@
+@media screen {
+  #print-container {
+    max-width: 8.5in;
+    margin: 2rem auto;
+    padding: 1in;
+    background: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+}
+
+@media print {
+  @page {
+    size: letter;
+    /* No margin here: printToPDF's own `margins` (main.js, generate-pdf)
+       now supplies the 1in on every side, because that's the mechanism that
+       leaves Chromium room to draw the page-number footer. Same 1in either
+       way — this only changes which layer sets it. */
+  }
+  body * {
+    visibility: hidden;
+  }
+  #print-container, #print-container * {
+    visibility: visible;
+  }
+  #print-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    max-width: 100%;
+  }
+}
+
+#print-container {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 12pt;
+  line-height: 2; /* Double spaced body text */
+  color: black;
+}
+
+#print-container .caption-block {
+  line-height: 1.15; /* Single spaced caption */
+  margin-bottom: 2em;
+}
+
+#print-container .court-header {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 1.5em;
+}
+
+#print-container .caption-table {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5em;
+}
+
+#print-container .caption-left {
+  width: 55%;
+  padding-right: 1em;
+}
+
+#print-container .caption-right {
+  width: 40%;
+  border-left: 1px solid black;
+  padding-left: 1em;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#print-container .party-role {
+  margin-bottom: 1em;
+}
+
+#print-container .v-separator {
+  margin-bottom: 1em;
+}
+
+#print-container .caption-bottom-rule {
+  border-top: 1px solid black;
+  margin: 0.5em 0;
+}
+
+#print-container .attorney-info {
+  font-size: 10pt;
+  margin-bottom: 2em;
+}
+
+#print-container .doc-title {
+  text-align: center;
+  font-weight: bold;
+  font-size: 12pt;
+  text-transform: uppercase;
+  margin: 2em 0;
+}
+
+#print-container .doc-paragraph {
+  text-align: justify;
+  text-indent: 0.5in;
+  margin-bottom: 0; /* Let line-height handle spacing */
+}
+
+#print-container .signature-block {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3em;
+  line-height: 1.15;
+}
+
+#print-container .sig-date {
+  width: 40%;
+}
+
+#print-container .sig-lines {
+  width: 50%;
+  border-top: 1px solid black;
+  padding-top: 0.5em;
+}
+
+#print-container .page-break {
+  page-break-after: always;
+}
+
+/* ---- District court caption, matching the filed appearances ---- */
+.caption-grid { width: 100%; border-collapse: collapse; margin-top: 1em; }
+.caption-grid td { vertical-align: top; padding: 0; }
+.cap-left { width: 55%; }
+.cap-right { width: 45%; padding-left: 0.3in; }
+/* Bold means a name, and nothing else: party names in the caption and the
+   attorney's name in a signature block. Role words, addresses, phone numbers
+   and case identifiers stay plain. Settled with the user 2026-08-18. */
+.cap-party { text-transform: uppercase; font-weight: bold; }
+.sig-name { font-weight: bold; }
+.cap-role { margin-left: 1.2in; }
+.cap-vs { margin-left: 0.5in; padding: 0.4em 0; }
+/* The "/" closer sits at the right edge under the parties. */
+/* Spec §04: the caption and the counsel block are each closed by a hairline
+   RULE that ends in a forward slash — not a bare slash. Both filed claim &
+   delivery packets and every appearance draw the line. */
+.cap-closer { text-align: right; border-bottom: 1px solid #000;
+  margin-top: -0.1em; margin-right: 1in; line-height: 1.1; }
+.cap-closer .rule { display: none; }
+.doc-title.underlined { text-decoration: underline; }
+.doc-plain { margin: 0.2em 0; }
+.sig-appearance { margin-top: 2.5em; margin-left: 3.6in; }
+.sig-appearance .sig-rule { letter-spacing: 0; }
+.sig-appearance .sig-lines div { line-height: 1.15; }
+/* Signature lines must not wrap — "NAME IN CAPS P12345" is one line. */
+.sig-appearance { margin-left: 3.1in; }
+.sig-appearance .sig-lines div { white-space: nowrap; }
+/* "Date:" sits inside the signature block, above the rule (decision 7). */
+.sig-appearance .sig-date-line { margin-bottom: 0.6em; white-space: nowrap; }
+
+/* ---- Appellate caption (Circuit Court briefs) ---- */
+.caption-grid.appellate .cap-right { padding-left: 0.4in; }
+.cap-case { margin-bottom: 1em; }
+.counsel-rule { border-top: 1px solid #000; margin: 0.5em 0; }
+.counsel-grid { width: 100%; border-collapse: collapse; }
+.counsel-grid td { vertical-align: top; width: 50%; padding: 0 0.2in 0 0; line-height: 1.15; }
+.doc-centered-bold { text-align: center; font-weight: bold; margin: 1em 0; }
+.heavy-rule { border-top: 2px solid #000; margin: 0.6em 0; }
+.word-count { margin-top: 3em; }
+.sig-sig { margin-left: 0.5in; }
+/* Scanned signature sits directly on the signature rule. */
+.sig-image img { max-height: 0.55in; max-width: 2.6in; display: block; margin-bottom: -0.06in; }
+
+/* ---- Stipulation and order (Phase 4) ---- */
+.u { text-decoration: underline; }
+/* Flush left, justified — no first-line indent (unlike .doc-paragraph),
+   confirmed against the filed PDF, which starts "IT IS HEREBY STIPULATED"
+   at the left margin. */
+.stip-clause { text-align: justify; margin: 0.4em 0 1.2em; }
+.dual-sig-grid { width: 100%; border-collapse: collapse; margin-top: 1.2em; }
+.dual-sig-grid td { vertical-align: top; width: 50%; padding: 0 0.25in 0 0; line-height: 1.15; }
+.dual-sig-grid .ds-sig-slot { min-height: 1.4em; margin-bottom: 0.3em; }
+.dual-sig-grid .ds-rule { border-top: 1px solid #000; margin-bottom: 0.3em; }
+.dual-sig-grid .ds-name { font-weight: bold; }
+/* Page 2 (the order) is centered throughout, no caption. */
+.order-block { text-align: center; }
+.order-block > div { margin-bottom: 0.7em; }
+.order-blank { display: inline-block; width: 1.6in; border-bottom: 1px solid #000; }
+.judge-sig { margin-top: 2.5em; }
+
+/* ---- Letters, memoranda and packet blocks (Phase 3) ---- */
+/* Layout follows spec §09; every value here is stored data, never branding
+   baked into the app. */
+.letterhead { display: grid; grid-template-columns: 1.6in 1fr 1in;
+  gap: 0.15in; align-items: start; margin-bottom: 0.5in; }
+.letterhead .lh-side { font-size: 8pt; line-height: 1.25; }
+.letterhead .lh-center { text-align: center; font-size: 10pt; line-height: 1.3; }
+.letterhead .lh-masthead { font-size: 20pt; font-weight: bold; margin-bottom: 2pt; }
+.letterhead .lh-office { font-weight: bold; }
+.letterhead .lh-contact { font-size: 9pt; }
+.letterhead .lh-seal img { max-width: 0.9in; max-height: 0.9in; }
+.letterhead-missing { color: #900; font-weight: bold; text-align: center; }
+
+/* Personal letterhead (spec §09): a structurally different layout from the
+   city letterhead above, not a variant of it — name bold at left, address
+   right-aligned, no seal, no names down the side. */
+.letterhead-personal { display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0.3in; align-items: start; margin-bottom: 0.5in; }
+.letterhead-personal .lhp-name { font-size: 18pt; font-weight: bold; }
+.letterhead-personal .lhp-office { font-weight: bold; }
+.letterhead-personal .lhp-right { text-align: right; font-weight: bold; }
+
+/* Date sits right of center; recipients flush left. */
+.letter-date { margin: 0.4in 0 0.35in 3.6in; }
+.recipient-block { margin-bottom: 0.18in; }
+.recipient-block .recipient-name { font-weight: bold; }
+
+.re-block { display: grid; grid-template-columns: 0.6in 1fr;
+  margin: 0.25in 0 0.25in 1.1in; }
+.re-block .re-label { font-weight: bold; }
+.re-block .re-lines div { font-weight: bold; }
+.re-block .re-casename { font-style: italic; }
+
+.to-the-above { font-weight: bold; margin: 0.2in 0; }
+.salutation { margin: 0.15in 0 0.25in; }
+.letter-body { margin: 0.15in 0; text-indent: 0.5in; }
+
+/* The DAAD caption's IN RE: block — same shape as re-block, no italics, and
+   no left indent (it sits at the page margin like every other caption, not
+   inside a letter). */
+.daad-in-re { display: grid; grid-template-columns: 0.6in 1fr; margin: 0.2in 0 0.3in; }
+.daad-in-re .re-label { font-weight: bold; }
+.daad-in-re .re-lines div { font-weight: bold; }
+
+.enclosure-list { margin: 0.2in 0 0.25in 0.75in; }
+.enclosure-list .encl-item { font-weight: bold; margin-bottom: 0.12in; }
+
+.cc-block { display: grid; grid-template-columns: 0.4in 1fr; margin-top: 0.2in; }
+.cc-label { font-weight: normal; }
+.cc-names div { margin-bottom: 0.02in; }
+.enclosure-list .encl-and { margin-bottom: 0.12in; }
+
+.letter-close { margin-top: 0.3in; margin-left: 3.4in; }
+.letter-close .lc-name { margin-top: 0.05in; }
+.ref-initials { margin-top: 0.45in; font-size: 11pt; }
+
+.memo-labels { display: grid; grid-template-columns: 0.9in 1fr;
+  gap: 0.14in 0.1in; margin: 0.3in 0; }
+.memo-labels .memo-em { font-weight: bold; font-style: italic; }
+
+.item-line { font-weight: bold; margin: 0.16in 0 0.16in 0.5in; }
+
+.answer-para { display: grid; grid-template-columns: 0.4in 1fr; margin: 0.14in 0; }
+.answer-para .ap-num { text-align: left; }
+
+.counsel-block { margin-top: 0.05in; }
+.counsel-block .cb-name { font-weight: bold; }
+
+.pos-venue { display: grid; grid-template-columns: max-content max-content;
+  gap: 0 0.15in; margin: 0.2in 0; font-weight: bold; }
+.pos-venue .pos-ss { text-align: right; }
+.pos-docs { font-weight: bold; margin: 0.15in 0 0.2in 0.35in; }
+.pos-line { margin-bottom: 0.12in; }
+.pos-line .pos-lbl { font-weight: bold; margin-right: 0.12in; }
+
+/* Blank intake questionnaire. A form, not a filing: single-spaced label lines
+   with room between them to write by hand, and a ruled grid for the prior
+   record. Mirrors the form_* blocks in main.js's Word export. */
+/* Mirrors the Word chain's keepNext/cantSplit (main.js). A heading alone at
+   the foot of a page, or a prior-record table split away from its headings,
+   makes a hand-filled form ambiguous. */
+.form-section { break-after: avoid; page-break-after: avoid;
+  font-weight: bold; margin: 0.28in 0 0.12in;
+  border-bottom: 1px solid #000; }
+.form-field { margin-bottom: 0.16in; line-height: 1.4; }
+.form-table { width: 100%; border-collapse: collapse; margin: 0.1in 0 0.2in;
+  break-inside: avoid; page-break-inside: avoid; }
+.form-table th, .form-table td { border: 1px solid #000; padding: 0.04in 0.06in;
+  text-align: left; }
+.form-table td { height: 0.32in; }

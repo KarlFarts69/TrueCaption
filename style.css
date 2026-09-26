@@ -1,0 +1,489 @@
+/* Classic Windows Desktop App Theme */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+  font-family: "Tahoma", "Segoe UI", sans-serif; 
+  background-color: #f0f0f0; 
+  color: #000000; 
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.window-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Tabs */
+.tabs-container {
+  display: flex;
+  /* Zoomed in on a small screen the row does not fit: it wraps (see the
+     media query below) rather than pushing the search box off the edge. */
+  flex-wrap: wrap;
+  background: #f0f0f0;
+  padding: 6px 6px 0 6px;
+  border-bottom: 1px solid #a0a0a0;
+}
+/* Too narrow for one row (in practice: zoomed in). The search box takes a
+   row of its own ABOVE the tabs, so the tabs still stand on the line. */
+@media (max-width: 1000px) {
+  .tabs-container .top-search {
+    order: -1;
+    flex-basis: 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding-bottom: 6px !important;
+  }
+}
+/* Narrower still (about 200% on a 1024-wide screen): the tabs alone fill a
+   row, so Help and the zoom controls move up beside the search box, drawn as
+   plain boxed buttons since there is no line up there for them to stand on,
+   and the tabs keep the bottom row, on the line, to themselves. */
+.tab-row-break { display: none; }
+@media (max-width: 680px) {
+  .tabs-container #btn-start-tutorial,
+  .tabs-container .zoom-controls { order: -3; margin-bottom: 6px; }
+  .tabs-container #btn-start-tutorial { margin-left: 0 !important; }
+  .tabs-container .zoom-controls .tab-tool,
+  .tabs-container #btn-start-tutorial { border-bottom: 1px solid #a0a0a0; border-radius: 3px; }
+  .tabs-container .top-search { order: -2; flex-basis: auto; flex-grow: 1; }
+  .tab-row-break { display: block; order: -1; flex-basis: 100%; height: 0; }
+}
+.tab, .tab-tool {
+  padding: 4px 16px;
+  background: #e1e1e1;
+  border: 1px solid #a0a0a0;
+  border-bottom: none;
+  margin-right: 2px;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+  cursor: pointer;
+}
+/* Help and the zoom controls: tab-shaped, for the line, but buttons. */
+.tab-tool {
+  font: inherit;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.tab-tool:hover { background: #ececec; }
+.tab-tool[aria-disabled="true"],
+.tab-tool[aria-disabled="true"]:hover { background: #e1e1e1; color: #8a8a8a; cursor: default; }
+.zoom-controls { display: flex; margin-left: 8px; }
+.zoom-controls .tab-tool { padding-left: 8px; padding-right: 8px; }
+#zoom-level { min-width: 4.2em; }
+.zoom-icon { width: 14px; height: 14px; display: block; }
+.tab.active {
+  background: #ffffff;
+  border-bottom: 1px solid #ffffff;
+  margin-bottom: -1px;
+  font-weight: bold;
+}
+
+/* Sub-tabs: quieter, smaller, no fill colour — deliberately less prominent
+   than the main tab row. Height is reserved even when both groups are
+   hidden so switching tabs doesn't shift the page content. */
+.sub-tabs-container {
+  display: flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 3px 10px 0 10px;
+  background: #f0f0f0;
+  border-bottom: 1px solid #a0a0a0;
+}
+.sub-tab-group { display: flex; }
+.sub-tab-group.hidden { display: none; }
+.sub-tab {
+  font-size: 0.85em;
+  color: #555;
+  padding: 2px 4px 4px;
+  margin-right: 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.sub-tab:hover { color: #000; }
+.sub-tab.active {
+  color: #000;
+  font-weight: bold;
+  border-bottom-color: #3a7fc1;
+}
+
+/* The prominent "start a new matter" click area — used on Home and again
+   atop the Matters list, in place of a small toolbar button. */
+.new-matter-panel {
+  border: 1px solid #a0a0a0;
+  background: #f7fbff;
+  padding: 22px 18px;
+  cursor: pointer;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.new-matter-panel:hover { background: #e5f1fb; border-color: #7fb3e0; }
+.new-matter-panel-title { font-size: 1.3em; font-weight: bold; }
+.new-matter-panel-sub { color: #555; margin-top: 4px; }
+
+/* The Court Filing / Letter fork screen reached from the panel above. */
+.fork-choice-wrap { max-width: 480px; margin: 40px auto; text-align: center; }
+.fork-choice-prompt { color: #555; }
+.fork-choice-row { display: flex; gap: 16px; justify-content: center; margin: 20px 0; }
+.fork-choice-btn { padding: 16px 28px; font-size: 1.05em; }
+
+/* A13: shown when a recorded file path no longer resolves on disk — checked
+   when the list renders, not only when the user clicks Open. */
+.missing-file-tag { color: #9b1c1c; font-weight: bold; font-size: 0.85em; margin-right: 6px; }
+
+/* A9: month calendar. Read-only — a view over matter_events, not a second
+   place to create them. */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-left: 1px solid #c8c8c8;
+  border-top: 1px solid #c8c8c8;
+}
+.cal-dow {
+  background: #eee;
+  font-weight: bold;
+  font-size: 0.8em;
+  padding: 4px 6px;
+  border-right: 1px solid #c8c8c8;
+  border-bottom: 1px solid #c8c8c8;
+  text-align: center;
+}
+.cal-cell {
+  min-height: 90px;
+  border-right: 1px solid #c8c8c8;
+  border-bottom: 1px solid #c8c8c8;
+  padding: 3px;
+  vertical-align: top;
+  font-size: 0.85em;
+}
+.cal-cell.cal-outside { background: #f7f7f7; color: #aaa; }
+.cal-cell.cal-today { background: #fffbe0; }
+.cal-daynum { font-weight: bold; margin-bottom: 2px; }
+.cal-event {
+  display: block;
+  cursor: pointer;
+  color: #003399;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 1px;
+}
+.cal-event.cal-done { color: #888; text-decoration: line-through; }
+.cal-event.cal-overdue { color: #9b1c1c; font-weight: bold; }
+
+/* Home view */
+/* New Matter, New Client and Add Documents side by side, equal width. */
+.home-panels { display: flex; gap: 16px; }
+.home-panels > .new-matter-panel { flex: 1; min-width: 0; }
+
+/* Add Documents: a short form, so it keeps a form's width rather than the
+   window's, with its buttons on one row. Layout only. */
+#view-add-documents { max-width: 480px; }
+#view-add-documents .combobox-wrapper input[type="text"],
+#view-contact-detail .combobox-wrapper input[type="text"] { width: 100%; box-sizing: border-box; }
+.adddocs-actions { display: flex; gap: 8px; }
+.home-columns { display: flex; gap: 16px; }
+.home-section { flex: 1; min-width: 0; }
+.home-section h3 { font-size: 1em; margin-bottom: 6px; }
+.home-empty { color: #666; }
+.home-row {
+  padding: 4px 0;
+  border-bottom: 1px solid #d4d4d4;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Dated notes (contact and court pages): "YYYY-MM-DD  body" rows on the
+   Home list idiom; a multi-line body shows in full. */
+.notes-list { margin-bottom: 8px; }
+.notes-list .home-row { align-items: flex-start; }
+.note-date { color: #555; white-space: nowrap; }
+.note-body { flex: 1; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.notes-list .btn { padding: 1px 6px; }
+.notes-add { display: flex; flex-direction: column; gap: 4px; }
+.notes-add input[type="date"] { align-self: flex-start; }
+.notes-add textarea { width: 100%; box-sizing: border-box; }
+.notes-add-buttons { display: flex; gap: 4px; }
+/* Connected to (contact page): the same list idiom — name link left, the
+   link's label and Remove right; the add form reuses .notes-add. */
+.links-list { margin-bottom: 8px; }
+.links-list .btn { padding: 1px 6px; }
+.link-right { display: flex; gap: 8px; align-items: baseline; color: #555; }
+.notes-add .combobox-wrapper input[type="text"], .links-add input[type="text"] { width: 100%; box-sizing: border-box; }
+/* Who's involved (case screen, the narrow side column): name link, the role
+   (or this case's label) under it, then the latest note cut to one line;
+   Remove on the right. A fieldset sizes to its min-content by default, which
+   a nowrap note would stretch past the column, hence min-width: 0. */
+#matter-who-fields { min-width: 0; }
+.who-left { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.who-role { color: #555; }
+.who-note { color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who-list .link-right { align-self: flex-start; }
+.who-add select { align-self: flex-start; }
+
+/* Activity log (matter and client profile). Append-only, newest first. */
+.activity-list { max-height: 220px; overflow-y: auto; }
+.activity-row {
+  padding: 3px 0;
+  border-bottom: 1px solid #e4e4e4;
+  font-size: 0.88em;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.activity-row .activity-date { color: #777; white-space: nowrap; }
+
+/* A8: shared "Today" button, wrapped around any date input in place. */
+.date-today-wrap { display: inline-flex; gap: 3px; align-items: center; }
+.today-btn { padding: 1px 5px; font-size: 0.85em; }
+
+/* Global search: caret for the "Show archived" option */
+.search-caret {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #666;
+  font-size: 0.8em;
+  z-index: 51;
+}
+.search-caret:hover { color: #000; }
+.search-menu {
+  position: absolute;
+  right: 8px;
+  top: 100%;
+  z-index: 52;
+  background: #fff;
+  border: 1px solid #999;
+  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  padding: 6px 10px;
+  font-weight: normal;
+  white-space: nowrap;
+}
+.search-result-archived { color: #888; font-style: italic; }
+
+/* A12: clickthrough tutorial overlay. */
+#tutorial-overlay { position: fixed; inset: 0; z-index: 200; }
+#tutorial-overlay.hidden { display: none; }
+/* Transparent: #tutorial-highlight's own box-shadow does the dimming (a
+   spotlight cutout), so this only exists to size the overlay's click area. */
+#tutorial-backdrop { position: absolute; inset: 0; background: transparent; }
+#tutorial-highlight {
+  position: absolute;
+  border: 2px solid #ffd23f;
+  border-radius: 3px;
+  box-shadow: 0 0 0 4000px rgba(0,0,0,0.45);
+  pointer-events: none;
+  transition: top 0.15s, left 0.15s, width 0.15s, height 0.15s;
+}
+#tutorial-callout {
+  position: absolute;
+  width: 280px;
+  background: #fff;
+  border: 1px solid #999;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  padding: 10px 12px;
+  font-size: 0.9em;
+}
+#tutorial-step-count { font-size: 0.8em; color: #666; }
+
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  background: #ffffff;
+  border: 1px solid #a0a0a0;
+  margin: 0 6px 6px 6px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.view { display: flex; flex-direction: column; gap: 12px; }
+.view.hidden { display: none !important; }
+.hidden { display: none !important; }
+
+/* Desktop-style Forms & Panels */
+.fieldset {
+  border: 1px solid #d4d4d4;
+  padding: 12px;
+  margin-bottom: 12px;
+  position: relative;
+}
+.fieldset legend {
+  background: #ffffff;
+  padding: 0 4px;
+  color: #003399;
+}
+
+/* Collapsible form sections. The state lives on the fieldset as a
+   `data-collapsed` attribute, not a class, so the initial state is declared in
+   the markup and this rule is the only thing that hides anything. */
+.section legend { padding: 0 2px; }
+.section-toggle {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-family: inherit;
+  font-size: 12px;
+  color: #003399;
+  cursor: pointer;
+}
+.section-toggle:hover { text-decoration: underline; }
+.section-toggle::before { content: '\25BE '; font-size: 9px; }
+.section[data-collapsed] .section-toggle::before { content: '\25B8 '; }
+.section[data-collapsed] .section-body { display: none; }
+.section-filled { color: #003399; font-size: 9px; vertical-align: middle; }
+/* The dot exists to say "there are answers in here" about a section you cannot
+   see into. Beside an open section it is noise — the content is right there —
+   so it shows only while the section is collapsed. The .hidden class still
+   tracks whether the section has answers at all; this only governs display. */
+.section:not([data-collapsed]) .section-filled { display: none; }
+.section[data-collapsed] { padding-bottom: 6px; }
+
+.form-grid { display: flex; gap: 16px; align-items: flex-start; }
+/* The editing column does the work; the side panel only lists documents. */
+.col-main { flex: 3; min-width: 0; }
+.col-side { flex: 1; min-width: 200px; max-width: 300px; }
+
+.form-row { display: flex; gap: 12px; margin-bottom: 8px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.form-group label { color: #000; }
+
+input[type="text"], input[type="email"], textarea, select, input[type="date"] {
+  border: 1px solid #8e8f8f;
+  padding: 3px 4px;
+  font-family: inherit;
+  font-size: 12px;
+}
+input:focus, textarea:focus, select:focus { outline: 1px solid #0078d7; border-color: #0078d7; }
+
+/* Buttons */
+.btn {
+  background: #e1e1e1;
+  border: 1px solid #a0a0a0;
+  padding: 4px 12px;
+  cursor: pointer;
+  color: #000;
+  border-radius: 2px;
+}
+.btn:hover { background: #e5f1fb; border-color: #0078d7; }
+.btn.primary { background: #0078d7; color: #fff; border-color: #005a9e; }
+.btn.primary:hover { background: #005a9e; }
+.btn.danger { color: #c00; }
+/* A disabled button, and an add-documents button while another add is
+   running (see withDocAdd in renderer.js) — the latter aria-disabled, not
+   disabled, so the click still arrives and can say why nothing happens. The
+   colours above override the browser's own disabled look, so restate it. */
+.btn:disabled,
+.btn:disabled:hover,
+.btn[aria-disabled="true"],
+.btn[aria-disabled="true"]:hover { background: #e1e1e1; border-color: #c8c8c8; color: #8a8a8a; cursor: default; }
+.btn.primary:disabled,
+.btn.primary:disabled:hover,
+.btn.primary[aria-disabled="true"],
+.btn.primary[aria-disabled="true"]:hover { background: #8fbde6; border-color: #8fbde6; color: #fff; }
+
+/* The foot of the client profile. Deliberately unlike the toolbar: pushed to
+   the bottom, separated by a rule, and the button is a plain grey control with
+   red lettering — never a big red primary. Destructive work should look
+   deliberate, not inviting. */
+.danger-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 10px;
+  border-top: 1px solid #e1e1e1;
+}
+.danger-foot .btn.danger:hover { background: #fdeaea; border-color: #c00; }
+.danger-foot-note { font-size: 0.85em; color: #666; }
+
+/* Toolbar Actions */
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e1e1e1;
+}
+
+/* Data Tables */
+.data-table { width: 100%; border-collapse: collapse; border: 1px solid #d4d4d4; }
+.data-table th, .data-table td { padding: 4px 8px; text-align: left; border: 1px solid #d4d4d4; }
+.data-table th { background: #f0f0f0; border-bottom: 1px solid #a0a0a0; }
+.data-table tbody tr:hover { background: #e5f1fb; cursor: pointer; }
+
+/* Combobox */
+.combobox-wrapper { position: relative; }
+.combobox-wrapper::after {
+  content: '▼';
+  position: absolute; right: 4px; top: 4px; font-size: 8px; color: #333; pointer-events: none;
+}
+.combobox-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: #ffffff; border: 1px solid #8e8f8f;
+  max-height: 150px; overflow-y: auto; z-index: 100;
+  list-style: none; margin: 0; padding: 0;
+}
+.combobox-dropdown li { padding: 4px 8px; cursor: pointer; }
+.combobox-dropdown li:hover { background: #0078d7; color: #fff; }
+.combobox-dropdown li.add-new { color: #0078d7; border-top: 1px solid #d4d4d4; }
+.combobox-dropdown li.add-new:hover { color: #fff; }
+
+.party-row { display: flex; gap: 4px; margin-bottom: 4px; }
+.party-row input { flex: 1; }
+
+#print-container { background: white; }
+
+/* Client documents panel. The sidebar is narrow, so a row stacks: label, then
+   date + case, then filename, then the actions. */
+.doc-row { padding: 6px 0; border-bottom: 1px solid #d4d4d4; }
+.doc-row input, .doc-row select { width: 100%; box-sizing: border-box; }
+.doc-meta { display: flex; gap: 4px; margin-top: 4px; }
+.doc-meta .doc-date, .doc-meta .doc-matter { flex: 1; min-width: 0; }
+.doc-name { font-size: 0.85em; color: #666; margin-top: 4px; word-break: break-all; }
+.doc-actions { display: flex; gap: 4px; margin-top: 4px; }
+.doc-actions .btn { padding: 1px 6px; }
+/* Only while a drag is actually over the panel — the whole point of the
+   window-level guard is that a drop anywhere else does nothing at all. */
+#person-documents-panel.drop-target,
+#home-add-documents.drop-target,
+#view-add-documents.drop-target { outline: 2px dashed #0078d7; background: #f2f8fd; }
+
+/* A court date that has gone by and was never ticked Done. Shown in the
+   roll-ups on the profile and the People list, deliberately not in the
+   same ink as a date that is still ahead: silently presenting a date that
+   has already passed as the "next" one is worse than showing nothing. */
+.overdue { color: #9b1c1c; font-weight: bold; }
+
+/* "John Smith added — name only." Sits under the field that made them, quiet
+   enough to ignore mid-filing but present enough to act on later. */
+.person-added-note {
+  margin: 4px 0 6px;
+  padding: 4px 6px;
+  background: #f4f8ff;
+  border-left: 3px solid #99b8e0;
+  font-size: 0.85em;
+  color: #444;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.person-added-note .open-profile-link { color: #003399; white-space: nowrap; }
+.person-added-note .btn { padding: 1px 6px; font-size: 1em; }
+
+/* Same quiet visual language, for standalone nudges that aren't tied to the
+   person-added-note lifecycle (cleared on every showView). */
+.quiet-note {
+  margin: 0 0 12px;
+  padding: 4px 6px;
+  background: #f4f8ff;
+  border-left: 3px solid #99b8e0;
+  font-size: 0.85em;
+  color: #444;
+}
+.quiet-note a { color: #003399; }

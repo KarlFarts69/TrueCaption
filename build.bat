@@ -1,0 +1,6 @@
+@echo off
+echo Installing dependencies...
+call npm install
+echo Building Windows .exe installer...
+call npm run dist
+pause
