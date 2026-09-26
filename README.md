@@ -17,47 +17,7 @@
 
 ---
 
-## The problem it solves
-
-A caption is the same twenty lines on every filing, and it is retyped — or
-copy-pasted and half-edited — on every filing. So the role word says
-*Defendant* in the caption and *Respondent* in the signature block. So the
-transmittal letter calls a document "Answer to Complaint **to** Claim and
-Delivery" and the proof of service calls the same paper "ANSWER TO COMPLAINT
-**FOR** CLAIM AND DELIVERY." Nobody notices until a clerk does.
-
-TrueCaption stores the matter — court, case number, judge, parties, roles,
-your signing profile — and derives every one of those from it. Change the
-matter, and the letter, the caption and the proof of service all change
-together, because none of them is a separate copy of the same fact.
-
-Everything lives in a local SQLite file on your own machine. Nothing is
-uploaded anywhere.
-
-## What it generates
-
-**Standalone documents** — Appearance · Notice of Hearing · Generic Motion ·
-Brief / Memorandum shell · Appellate Brief or Answer · Stipulation and Order
-of Adjournment · Proof of Service · freeform letters on your letterhead
-
-**Packets** — a whole filing as one unit, in its own dated folder:
-
-| Packet | Contains |
-|---|---|
-| Claim &amp; Delivery Response | transmittal letter, answer to complaint, answer to motion, memorandum to the property officer, proof of service |
-| Driver License Hearing Request | covering letter, appearance and request for hearing |
-| City Attorney letter | letterhead, confidential banner, `cc:` list, optional attached scan |
-
-Every document renders twice — a PDF via Electron's print pipeline and a
-`.docx` via the `docx` library — from the same block list, so what you file
-and what you edit are the same document.
-
-**Also:** multiple signing profiles on the My Office tab (one per office you sign under), signature
-image with a crop tool, files saved under each client (`Clients/<Client>/`,
-one folder per case, set once and never moved; organizations such as a city
-are ordinary Organization clients), a month calendar of court dates,
-"et al." handling with a manual override, temporary case-number flagging,
-rolling automatic backups with restore, and an on-demand preview panel.
+## TO COME
 
 ## Read this before you file anything with it
 
